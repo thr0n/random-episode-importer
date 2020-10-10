@@ -1,57 +1,88 @@
-const dotenv = require('dotenv');
-const fs = require('fs');
+const dotenv = require("dotenv");
+const fs = require("fs");
+const async = require("async");
 
-const spotifyService = require('./service/spotifyService')
+const spotifyService = require("./service/spotifyService");
 
-const dir = './out/'
+const ALL_ARTISTS = require("./config/artists").artists;
+const OUTPUT_DIR = "./out/";
 
 dotenv.config();
 
 const saveAlbums = async (albumSlice) => {
-    albumSlice.items.map(slice => {
-        const album = {
-            id: slice.id,
-            artist: slice.artists[0].name,
-            title: slice.name,
-            url: slice.external_urls.spotify,
-            image: slice.images[0]
+  albumSlice.items.map((slice) => {
+    const album = {
+      episodeId: slice.id,
+      artistName: slice.artists[0].name,
+      artistId: slice.artists[0].id,
+      title: slice.name,
+      url: slice.external_urls.spotify,
+      image: slice.images[0],
+    };
+
+    fs.writeFile(
+      OUTPUT_DIR + "/" + slice.id + ".json",
+      JSON.stringify(album),
+      "utf8",
+      (err) => {
+        if (err) {
+          console.log("Error writing file: " + err);
+          return console.log(err);
         }
-        fs.writeFile(dir + '/' + slice.id + '.json', JSON.stringify(album), "utf8", (err) => {
-            if (err) {
-                console.log('Error writing file: ' + err)
-                return console.log(err)
-            }
-        })
-    })
-}
+      }
+    );
+  });
+};
 
-const handleArtist = async (accessToken, artist) => {
-    const albumSlice = await spotifyService.fetchAlbums(accessToken.access_token, artist.id)
-    await saveAlbums(albumSlice)
-    let { next } = albumSlice
+const handleArtist = async (accessToken, artistId, nextSlice) => {
+  const albumSlice = await spotifyService.fetchAlbums(
+    accessToken,
+    artistId,
+    nextSlice
+  );
+  await saveAlbums(albumSlice);
 
-    while (next != null) {
-        console.log("Still something to do for: " + artist.name)
-        const albumSlice = await spotifyService.fetchAlbums(accessToken.access_token, artist.id, next)
-        await saveAlbums(albumSlice)
-        next = albumSlice.next
-        console.log("next = " + next)
+  const artistDetails = await spotifyService.fetchArtist(accessToken, artistId);
+  const ad = {
+    id: artistDetails.id,
+    name: artistDetails.name,
+    image: {
+      height: artistDetails.images[0].height,
+      url: artistDetails.images[0].url,
+      width: artistDetails.images[0].width,
+    },
+  };
+  fs.writeFile(
+    OUTPUT_DIR + "artists/" + ad.id + ".json",
+    JSON.stringify(ad),
+    "utf8",
+    (err) => {
+      if (err) {
+        console.log("Error writing file: " + err);
+        return console.log(err);
+      }
     }
-    console.log("We are done!")
-}
+  );
 
-const doIt = async () => {
-    if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir);
-    }
+  if (albumSlice.next) {
+    handleArtist(accessToken, artistId, albumSlice.next);
+  }
+};
 
-    const accessToken = await spotifyService.getAccessToken()
-    const allArtists = require('./config/artists').artists
+(async () => {
+  if (!fs.existsSync(OUTPUT_DIR)) {
+    fs.mkdirSync(OUTPUT_DIR);
+  }
+  if (!fs.existsSync(OUTPUT_DIR + "artists")) {
+    fs.mkdirSync(OUTPUT_DIR + "artists");
+  }
 
-    allArtists.forEach(async (artist) => {
-        handleArtist(accessToken, artist)
-    })
-}
-
-console.log("Hello!")
-doIt()
+  try {
+    const accessToken = await spotifyService.getAccessToken();
+    async.forEach(ALL_ARTISTS, async (artist) => {
+      await handleArtist(accessToken.access_token, artist.id);
+    });
+  } catch (error) {
+    console.log(error.stack);
+  }
+})();

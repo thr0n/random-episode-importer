@@ -10,7 +10,11 @@
   "keywords": [],
   "description": "",
   "dependencies": {
+    "async": "^3.2.0",
     "axios": "^0.19.2",
     "dotenv": "^8.2.0"
+  },
+  "devDependencies": {
+    "prettier": "^2.1.2"
   }
 }

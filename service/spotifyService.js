@@ -22,6 +22,8 @@ async function getAccessToken() {
       );
       resolve(response.data);
     } catch (err) {
+      console.log('Could not retrieve access token!')
+      console.log(err.stack)
       reject(err);
     }
   });
@@ -29,23 +31,32 @@ async function getAccessToken() {
 
 async function fetchArtist(token, artistId) {
   return new Promise(async (resolve) => {
-    const response = await axios.get(
-      `https://api.spotify.com/v1/artists/${artistId}`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
-    resolve(response.data);
+    try {
+      const response = await axios.get(
+        `https://api.spotify.com/v1/artists/${artistId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      resolve(response.data);
+    } catch (err) {
+      console.log(err.stack)
+    }
   });
 }
 
-function fetchAlbums(token, artistId, next) {
+function fetchAlbums(token, artistId, next, limit, offset) {
+  let queryUrl = `https://api.spotify.com/v1/artists/${artistId}/albums`
+
+  if (next) {
+    queryUrl = next
+  } else if (limit !== undefined && offset !== undefined) {
+    queryUrl = queryUrl.concat(`?offset=${offset}&limit=${limit}&include_groups=album`)
+  }
+
   return new Promise(async (resolve, reject) => {
-    const queryUrl = next
-      ? next
-      : `https://api.spotify.com/v1/artists/${artistId}/albums`;
     try {
       const response = await axios.get(queryUrl, {
         headers: {
@@ -54,6 +65,7 @@ function fetchAlbums(token, artistId, next) {
       });
       resolve(response.data);
     } catch (err) {
+      console.log(err.stack)
       reject(err);
     }
   });

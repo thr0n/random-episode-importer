@@ -5,6 +5,13 @@ const admin = require("firebase-admin");
 const serviceAccount = require("../.secrets/sa.json");
 const OUTPUT_DIR = "./out/";
 
+if (!fs.existsSync(OUTPUT_DIR)) {
+    fs.mkdirSync(OUTPUT_DIR);
+}
+if (!fs.existsSync(OUTPUT_DIR + "artists")) {
+    fs.mkdirSync(OUTPUT_DIR + "artists");
+}
+
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
   databaseURL: process.env.DATABASE_URL,
@@ -22,6 +29,7 @@ async function saveAlbums(albumSlice){
         title: slice.name,
         url: slice.external_urls.spotify,
         image: slice.images[0],
+        image_small: slice.images[2],
         released: getReleaseYearFrom(slice.release_date, slice.release_date_precision)
       };
 
@@ -38,8 +46,8 @@ async function saveAlbums(albumSlice){
             return console.log(err);
           }
         }
-      );
-    });
+      )
+    })
   };
   
   function getReleaseYearFrom(releaseDate, precision) {
@@ -59,14 +67,6 @@ async function saveAlbums(albumSlice){
   }
 
 async function persistArtist(artistDetails, artistId) {
-    // TODO extract to setup method
-    if (!fs.existsSync(OUTPUT_DIR)) {
-        fs.mkdirSync(OUTPUT_DIR);
-    }
-    if (!fs.existsSync(OUTPUT_DIR + "artists")) {
-        fs.mkdirSync(OUTPUT_DIR + "artists");
-    }
-
     const ad = {
         artistId: artistId,
         name: artistDetails.name,
@@ -91,18 +91,6 @@ async function persistArtist(artistDetails, artistId) {
         }
     );
   };
-
-async function persistEpisodes(accessToken, artistId, nextSlice) {
-    const albumSlice = await spotifyService.fetchAlbums(
-        accessToken,
-        artistId,
-        nextSlice
-    );
-    await saveAlbums(albumSlice);
-    if (albumSlice.next) {
-        persistEpisodes(accessToken, artistId, albumSlice.next);
-    }
-};
 
 exports.persistArtist = persistArtist
 exports.saveAlbums = saveAlbums

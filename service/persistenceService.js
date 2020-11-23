@@ -20,6 +20,7 @@ admin.initializeApp({
 const db = admin.firestore();
 
 async function saveAlbums(albumSlice){
+  if (albumSlice.length === 0) return 
     albumSlice.items.map(async (slice) => {
       const episodeId = slice.id;
       const album = {

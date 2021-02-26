@@ -58,14 +58,15 @@ const queryAllEpisodesFor = async (accessToken, artistId, nextSlice) => {
     } else {
       // weekly (or monthly) mode
       async.forEach(ALL_ARTISTS, async (artist) => {
-        // TODO check if artists already exitsts in firestore
-        queryLatestEpisodesFor(token, artist.id)
-        // TODO and fetch the latest image (it might change, e. g. during Halloween)
-        // -----
-        // TODO else: Fetch artist information and all episodes
-        // const artistDetails = await spotifyService.fetchArtist(token, artist.id);
-        // await persistenceService.persistArtist(artistDetails, artist.id);
-        // queryAllEpsiodes(...)
+        const artistDetails = await spotifyService.fetchArtist(token, artist.id)
+        const response = await persistenceService.getArtistRef(artist.id)
+        await persistenceService.persistArtist(artistDetails, artist.id)
+
+        if (response === null) {
+          queryAllEpisodesFor(token, artist.id, null)
+        } else {
+          queryLatestEpisodesFor(token, artist.id)
+        }
       })
     }
   } catch (error) {

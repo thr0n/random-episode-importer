@@ -1,7 +1,9 @@
+import { SpotifyArtist, SpotifyEpisodeResponse } from "../types/Spotify";
+
 const axios = require("axios");
 const querystring = require("querystring");
 
-async function getAccessToken() {
+const getAccessToken = async () => {
   return new Promise(async (resolve, reject) => {
     const clientId = process.env.SPOTIFY_CLIENT_ID;
     const clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
@@ -22,15 +24,15 @@ async function getAccessToken() {
       );
       resolve(response.data);
     } catch (err) {
-      console.log('Could not retrieve access token!')
-      console.log(err.stack)
+      console.log("Could not retrieve access token!");
+      console.log(err.stack);
       reject(err);
     }
   });
-}
+};
 
-async function fetchArtist(token, artistId) {
-  return new Promise(async (resolve) => {
+const fetchArtist = async (token, artistId): Promise<SpotifyArtist> => {
+  return new Promise(async (resolve, reject) => {
     try {
       const response = await axios.get(
         `https://api.spotify.com/v1/artists/${artistId}`,
@@ -42,19 +44,24 @@ async function fetchArtist(token, artistId) {
       );
       resolve(response.data);
     } catch (err) {
-      console.log(err.stack)
+      reject(err.stack);
     }
   });
-}
+};
 
-function fetchAlbums(token, artistId, next, limit, offset) {
-  let queryUrl = `https://api.spotify.com/v1/artists/${artistId}/albums`
-
-  if (next) {
-    queryUrl = next
-  } else if (limit !== undefined && offset !== undefined) {
-    queryUrl = queryUrl.concat(`?offset=${offset}&limit=${limit}&include_groups=album`)
-  }
+const fetchAlbums = async (
+  token,
+  artistId,
+  next,
+  limit,
+  offset
+): Promise<SpotifyEpisodeResponse> => {
+  const queryUrl = deriveQueryUrl(
+    `https://api.spotify.com/v1/artists/${artistId}/albums`,
+    next,
+    limit,
+    offset
+  );
 
   return new Promise(async (resolve, reject) => {
     try {
@@ -65,12 +72,29 @@ function fetchAlbums(token, artistId, next, limit, offset) {
       });
       resolve(response.data);
     } catch (err) {
-      console.log(err.stack)
+      console.log(err.stack);
       reject(err);
     }
   });
-}
+};
 
-exports.getAccessToken = getAccessToken;
-exports.fetchAlbums = fetchAlbums;
-exports.fetchArtist = fetchArtist;
+const deriveQueryUrl = (
+  url: string,
+  next?: string,
+  limit?: number,
+  offset?: number
+): string => {
+  if (!!next) {
+    return next;
+  }
+  if (limit > 0 && offset >= 0) {
+    return url.concat(`?offset=${offset}&limit=${limit}&include_groups=album`);
+  }
+  return url;
+};
+
+module.exports = {
+  getAccessToken,
+  fetchArtist,
+  fetchAlbums,
+};

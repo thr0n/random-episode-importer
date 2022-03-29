@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "prettier": "prettier --write '**/*.{ts,js}'",
+    "prettier": "prettier --write '**/*.{ts,js,json}'",
     "start": "tsc && node dist/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -12,7 +12,6 @@
   "keywords": [],
   "description": "",
   "dependencies": {
-    "async": "^3.2.0",
     "axios": "^0.21.1",
     "date-fns": "^2.16.1",
     "dotenv": "^8.2.0"

@@ -91,39 +91,9 @@ export const persistEpisode = async (data: EpisodeDetails) => {
 
   dc.put(params, (err, data) => {
     if (err) {
-      console.error(
-        "Unable to add Episode",
-        data.name,
-        ". Error JSON:",
-        JSON.stringify(err, null, 2)
-      );
+      console.log(err);
     } else {
-      console.log("PutItem succeeded");
-    }
-  });
-};
-
-export const persist = (
-  table: string,
-  data: ArtistDetails | EpisodeDetails
-) => {
-  const dc = new AWS.DynamoDB.DocumentClient();
-
-  let params = {
-    TableName: table,
-    Item: data,
-  };
-
-  dc.put(params, (err, data) => {
-    if (err) {
-      console.error(
-        `Unable to add ${table}`,
-        data.name,
-        ". Error JSON:",
-        JSON.stringify(err, null, 2)
-      );
-    } else {
-      console.log("PutItem succeeded");
+      //console.log("PutItem succeeded");
     }
   });
 };
